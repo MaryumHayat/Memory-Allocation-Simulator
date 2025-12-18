@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Allocation Simulator - OS Project</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-memory"></i> Memory Allocation Simulator</h1>
+                <p class="subtitle">OS Project - Compare First Fit, Best Fit, and Worst Fit Algorithms</p>
+                <div class="theme-toggle">
+                    <button id="themeToggle" class="btn-icon">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Controls -->
+            <div class="control-panel">
+                <div class="panel-section">
+                    <h2><i class="fas fa-cog"></i> Memory Configuration</h2>
+                    <div class="form-group">
+                        <label for="memorySize">
+                            <i class="fas fa-database"></i> Total Memory Size (KB):
+                        </label>
+                        <div class="input-with-btn">
+                            <input type="number" id="memorySize" value="1024" min="64" max="10000">
+                            <button id="initMemory" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Initialize
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memoryLayout">
+                            <i class="fas fa-th-large"></i> Initial Memory Layout:
+                        </label>
+                        <select id="memoryLayout">
+                            <option value="single">Single Free Block</option>
+                            <option value="multiple" selected>Multiple Free Blocks</option>
+                            <option value="fragmented">Fragmented Layout</option>
+                            <option value="mixed">Mixed Sizes</option>
+                        </select>
+                        <small class="form-hint">Different layouts show algorithm differences better</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="partitionMode">
+                            <i class="fas fa-th"></i> Allocation Mode:
+                        </label>
+                        <select id="partitionMode">
+                            <option value="fixed">Fixed Partitions (Internal Fragmentation)</option>
+                            <option value="dynamic">Dynamic Partitions (External Fragmentation)</option>
+                        </select>
+                        <small class="form-hint">Fixed: Processes allocated to fixed partitions. Dynamic: Processes split blocks</small>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2><i class="fas fa-tasks"></i> Process Management</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pid">Process ID:</label>
+                            <input type="text" id="pid" placeholder="P1" value="P1">
+                        </div>
+                        <div class="form-group">
+                            <label for="processSize">Memory (KB):</label>
+                            <input type="number" id="processSize" value="128" min="1" max="1024">
+                        </div>
+                    </div>
+                    
+                    <div class="process-controls">
+                        <div class="button-group">
+                            <button id="addProcess" class="btn btn-success">
+                                <i class="fas fa-plus-circle"></i> Add Process
+                            </button>
+                            <button id="addRandomProcess" class="btn btn-secondary">
+                                <i class="fas fa-random"></i> Random Process
+                            </button>
+                        </div>
+                        
+                        <div class="advanced-controls">
+                            <div class="form-group">
+                                <label for="processSequence">
+                                    <i class="fas fa-list-ol"></i> Add Process Sequence:
+                                </label>
+                                <div class="sequence-input">
+                                    <input type="text" id="processSequence" placeholder="P1:128, P2:256, P3:192">
+                                    <button id="addSequence" class="btn btn-info">
+                                        <i class="fas fa-bolt"></i> Add All
+                                    </button>
+                                </div>
+                                <small class="form-hint">Format: P1:100, P2:200, P3:150</small>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button id="compactMemory" class="btn btn-warning">
+                                <i class="fas fa-compress-alt"></i> Compact
+                            </button>
+                            <button id="clearAll" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2><i class="fas fa-chart-pie"></i> Fragmentation Analysis</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                                <i class="fas fa-puzzle-piece"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>External Fragmentation</h3>
+                                <p id="externalFrag" class="stat-value">0 KB (0%)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Internal Fragmentation</h3>
+                                <p id="internalFrag" class="stat-value">0 KB (0%)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>Memory Utilization</h3>
+                                <p id="memoryUtil" class="stat-value">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Visualization Area -->
+            <div class="main-visualization">
+                <!-- Algorithm Visualizations Section -->
+                <div class="algorithms-visualization-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-project-diagram"></i> Algorithm Visualizations</h2>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="color-box allocated"></div>
+                                <span>Allocated Memory</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box free"></div>
+                                <span>Free Memory</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box internal-frag"></div>
+                                <span>Internal Fragmentation</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box partition-border"></div>
+                                <span>Partition Boundary</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithms-container">
+                        <!-- First Fit Visualization -->
+                        <div class="algorithm-visualization">
+                            <div class="algorithm-header">
+                                <h3 class="algorithm-title">
+                                    <i class="fas fa-arrow-right" style="color: #4CAF50;"></i>
+                                    First Fit Algorithm
+                                </h3>
+                                <div class="algorithm-stats-header">
+                                    <span class="stat-badge">Free Blocks: <span id="firstFitFreeBlocks">0</span></span>
+                                    <span class="stat-badge">External Frag: <span id="firstFitExternalFrag">0 KB</span></span>
+                                </div>
+                            </div>
+                            <div class="memory-container">
+                                <div class="memory-bar" id="firstFitVisualization">
+                                    <!-- Memory bar segments will be generated here -->
+                                </div>
+                                <div class="memory-scale">
+                                    <span>0 KB</span>
+                                    <span id="firstFitMidScale">512 KB</span>
+                                    <span id="firstFitEndScale">1024 KB</span>
+                                </div>
+                            </div>
+                            <div class="algorithm-description">
+                                <p><i class="fas fa-info-circle"></i> Allocates to the <strong>first</strong> sufficient free block found</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Best Fit Visualization -->
+                        <div class="algorithm-visualization">
+                            <div class="algorithm-header">
+                                <h3 class="algorithm-title">
+                                    <i class="fas fa-search" style="color: #2196F3;"></i>
+                                    Best Fit Algorithm
+                                </h3>
+                                <div class="algorithm-stats-header">
+                                    <span class="stat-badge">Free Blocks: <span id="bestFitFreeBlocks">0</span></span>
+                                    <span class="stat-badge">External Frag: <span id="bestFitExternalFrag">0 KB</span></span>
+                                </div>
+                            </div>
+                            <div class="memory-container">
+                                <div class="memory-bar" id="bestFitVisualization">
+                                    <!-- Memory bar segments will be generated here -->
+                                </div>
+                                <div class="memory-scale">
+                                    <span>0 KB</span>
+                                    <span id="bestFitMidScale">512 KB</span>
+                                    <span id="bestFitEndScale">1024 KB</span>
+                                </div>
+                            </div>
+                            <div class="algorithm-description">
+                                <p><i class="fas fa-info-circle"></i> Allocates to the <strong>smallest</strong> sufficient free block</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Worst Fit Visualization -->
+                        <div class="algorithm-visualization">
+                            <div class="algorithm-header">
+                                <h3 class="algorithm-title">
+                                    <i class="fas fa-expand" style="color: #FF9800;"></i>
+                                    Worst Fit Algorithm
+                                </h3>
+                                <div class="algorithm-stats-header">
+                                    <span class="stat-badge">Free Blocks: <span id="worstFitFreeBlocks">0</span></span>
+                                    <span class="stat-badge">External Frag: <span id="worstFitExternalFrag">0 KB</span></span>
+                                </div>
+                            </div>
+                            <div class="memory-container">
+                                <div class="memory-bar" id="worstFitVisualization">
+                                    <!-- Memory bar segments will be generated here -->
+                                </div>
+                                <div class="memory-scale">
+                                    <span>0 KB</span>
+                                    <span id="worstFitMidScale">512 KB</span>
+                                    <span id="worstFitEndScale">1024 KB</span>
+                                </div>
+                            </div>
+                            <div class="algorithm-description">
+                                <p><i class="fas fa-info-circle"></i> Allocates to the <strong>largest</strong> sufficient free block</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-chart-bar"></i> Algorithm Performance Comparison</h3>
+                            <div class="chart-legend">
+                                <span style="color: #4CAF50">● First Fit</span>
+                                <span style="color: #2196F3">● Best Fit</span>
+                                <span style="color: #FF9800">● Worst Fit</span>
+                            </div>
+                        </div>
+                        <canvas id="algorithmChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fas fa-chart-pie"></i> Memory Distribution (Average)</h3>
+                        </div>
+                        <canvas id="fragmentationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Process Table -->
+                <div class="process-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> Active Processes</h2>
+                        <div class="table-info">
+                            <span id="processCount">0 Processes</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="processTable">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Size (KB)</th>
+                                    <th>First Fit Block</th>
+                                    <th>Best Fit Block</th>
+                                    <th>Worst Fit Block</th>
+                                    <th>Internal Frag</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Process rows will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification System -->
+        <div id="notification" class="notification">
+            <span id="notificationText"></span>
+            <button onclick="hideNotification()" class="btn-notification">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Block Info Tooltip -->
+        <div id="blockTooltip" class="tooltip"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
